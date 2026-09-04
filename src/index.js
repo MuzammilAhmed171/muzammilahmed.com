@@ -26,10 +26,7 @@ if (config.env !== "production") {
   app.use(morgan("dev"));
 }
 
-/* Uploaded files are served statically */
-app.use("/uploads", express.static(uploadsDir));
-
-/* DB middleware for serverless invocations */
+/* Connect DB middleware for serverless execution */
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -38,6 +35,9 @@ app.use(async (req, res, next) => {
     next(err);
   }
 });
+
+/* Uploaded files are served statically */
+app.use("/uploads", express.static(uploadsDir));
 
 /* API routes */
 app.use("/api", routes);
@@ -56,7 +56,8 @@ app.get("*", (req, res, next) => {
 app.use(notFound);
 app.use(errorHandler);
 
-if (require.main === module) {
+async function start() {
+  await connectDB();
   app.listen(config.port, () => {
     console.log(`\n[api] Portfolio API listening on port ${config.port}`);
     console.log(`[api] Environment: ${config.env}`);
@@ -64,4 +65,9 @@ if (require.main === module) {
   });
 }
 
+if (require.main === module) {
+  start();
+}
+
 module.exports = app;
+
