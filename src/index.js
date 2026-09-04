@@ -43,6 +43,11 @@ app.use(async (req, res, next) => {
   }
 });
 
+/* Root health route */
+app.get("/", (req, res) => {
+  res.json({ message: "Portfolio API is running successfully on Vercel!", status: "online" });
+});
+
 /* API routes */
 app.use("/api", routes);
 
