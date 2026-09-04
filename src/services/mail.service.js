@@ -29,22 +29,27 @@ async function sendOtpEmail(to, code) {
     return { sent: false, fallback: "console" };
   }
 
-  await transport.sendMail({
-    from: config.smtp.from,
-    to,
-    subject: "Your verification code",
-    text: `Your verification code is ${code}. It expires in 10 minutes.`,
-    html: `
-      <div style="font-family:Arial,Helvetica,sans-serif;background:#0b0b0b;padding:24px">
-        <div style="max-width:480px;margin:0 auto;background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:28px">
-          <p style="color:#9ca3af;margin:0 0 8px">Your verification code is</p>
-          <h1 style="color:#ffc107;letter-spacing:8px;margin:0 0 16px">${code}</h1>
-          <p style="color:#9ca3af;margin:0">It expires in 10 minutes. If you did not request this, you can ignore this email.</p>
-        </div>
-      </div>`,
-  });
-
-  return { sent: true };
+  try {
+    await transport.sendMail({
+      from: config.smtp.from,
+      to,
+      subject: "Your verification code",
+      text: `Your verification code is ${code}. It expires in 10 minutes.`,
+      html: `
+        <div style="font-family:Arial,Helvetica,sans-serif;background:#0b0b0b;padding:24px">
+          <div style="max-width:480px;margin:0 auto;background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:28px">
+            <p style="color:#9ca3af;margin:0 0 8px">Your verification code is</p>
+            <h1 style="color:#ffc107;letter-spacing:8px;margin:0 0 16px">${code}</h1>
+            <p style="color:#9ca3af;margin:0">It expires in 10 minutes. If you did not request this, you can ignore this email.</p>
+          </div>
+        </div>`,
+    });
+    console.log(`[mail] OTP email sent successfully to ${to}`);
+    return { sent: true };
+  } catch (err) {
+    console.error("[mail] Error sending OTP email:", err.message);
+    throw new Error(`Email sending failed: ${err.message}`);
+  }
 }
 
 module.exports = { sendOtpEmail };
