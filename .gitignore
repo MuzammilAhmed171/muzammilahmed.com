@@ -1,0 +1,13 @@
+node_modules/
+.env
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.png
+uploads/*.webp
+uploads/*.gif
+uploads/*.pdf
+uploads/*.mp4
+uploads/*.webm
+!uploads/.gitkeep
+*.log
+.DS_Store
