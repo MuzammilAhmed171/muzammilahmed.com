@@ -26,18 +26,22 @@ if (config.env !== "production") {
   app.use(morgan("dev"));
 }
 
-/* Connect DB middleware for serverless execution */
+/* Uploaded files are served statically */
+app.use("/uploads", express.static(uploadsDir));
+
+/* Ensure DB is connected before handling API requests (for serverless environments like Vercel) */
 app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (err) {
-    next(err);
+    console.error("[db] Middleware connection error:", err.message);
+    if (req.originalUrl.startsWith("/api")) {
+      return res.status(500).json({ error: "Database connection failed. Please check MongoDB Atlas access." });
+    }
+    next();
   }
 });
-
-/* Uploaded files are served statically */
-app.use("/uploads", express.static(uploadsDir));
 
 /* API routes */
 app.use("/api", routes);
@@ -70,4 +74,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
