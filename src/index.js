@@ -29,6 +29,16 @@ if (config.env !== "production") {
 /* Uploaded files are served statically */
 app.use("/uploads", express.static(uploadsDir));
 
+/* DB middleware for serverless invocations */
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* API routes */
 app.use("/api", routes);
 
@@ -46,8 +56,7 @@ app.get("*", (req, res, next) => {
 app.use(notFound);
 app.use(errorHandler);
 
-async function start() {
-  await connectDB();
+if (require.main === module) {
   app.listen(config.port, () => {
     console.log(`\n[api] Portfolio API listening on port ${config.port}`);
     console.log(`[api] Environment: ${config.env}`);
@@ -55,4 +64,4 @@ async function start() {
   });
 }
 
-start();
+module.exports = app;
