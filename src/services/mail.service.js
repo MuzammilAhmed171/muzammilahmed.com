@@ -7,9 +7,10 @@ let transporter = null;
 function getTransporter() {
   if (!config.smtp.enabled) return null;
   if (!transporter) {
+    const cleanHost = String(config.smtp.host || "").trim().replace(/^["']|["']$/g, "");
     transporter = nodemailer.createTransport({
-      host: config.smtp.host,
-      port: config.smtp.port,
+      host: cleanHost,
+      port: config.smtp.port || 587,
       secure: config.smtp.port === 465,
       auth: { user: config.smtp.user, pass: config.smtp.pass },
     });

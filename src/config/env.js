@@ -36,11 +36,11 @@ const config = {
   },
 
   smtp: {
-    host: process.env.SMTP_HOST || "",
-    port: Number(process.env.SMTP_PORT || 587),
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
-    from: process.env.SMTP_FROM || "Muzammil Ahmed <no-reply@example.com>",
+    host: (process.env.SMTP_HOST || "").trim().replace(/^["']|["']$/g, ""),
+    port: Number((process.env.SMTP_PORT || "587").trim().replace(/^["']|["']$/g, "")),
+    user: (process.env.SMTP_USER || "").trim().replace(/^["']|["']$/g, ""),
+    pass: (process.env.SMTP_PASS || "").trim().replace(/^["']|["']$/g, ""),
+    from: (process.env.SMTP_FROM || "Muzammil Ahmed <no-reply@example.com>").trim().replace(/^["']|["']$/g, ""),
   },
 };
 
