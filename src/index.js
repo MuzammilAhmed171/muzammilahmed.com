@@ -15,9 +15,19 @@ const { notFound, errorHandler } = require("./middleware/error.middleware");
 
 const app = express();
 
-/* Security + parsing */
+/* Security + CORS + parsing */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors({ origin: config.cors.origin, credentials: false }));
+app.use(cors({ origin: "*", credentials: false }));
 app.use(express.json({ limit: "15mb" })); // large limit so uploaded data-URLs fit
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
