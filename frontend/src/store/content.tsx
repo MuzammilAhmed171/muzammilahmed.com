@@ -136,15 +136,6 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     }
   }, [content]);
 
-  /* Debounced push to the backend when an admin is signed in */
-  const queuePush = useCallback(() => {
-    if (!apiEnabled || !getToken()) return;
-    if (pushTimer.current) window.clearTimeout(pushTimer.current);
-    pushTimer.current = window.setTimeout(() => {
-      api.content.push(contentRef.current).catch(() => {});
-    }, 900);
-  }, []);
-
   /* Hydrate from the backend once (public view) */
   useEffect(() => {
     if (!apiEnabled) return;
@@ -171,12 +162,29 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  /* Immediately sync section update to backend & local storage */
   const updateSection = useCallback(
-    <K extends keyof SiteContent>(key: K, value: SiteContent[K]) => {
-      setContent((c) => ({ ...c, [key]: value }));
-      queuePush();
+    async <K extends keyof SiteContent>(key: K, value: SiteContent[K]) => {
+      const nextContent = { ...contentRef.current, [key]: value };
+      setContent(nextContent);
+      contentRef.current = nextContent;
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextContent));
+      } catch {
+        /* storage full, content stays in memory */
+      }
+
+      if (apiEnabled && getToken()) {
+        if (pushTimer.current) window.clearTimeout(pushTimer.current);
+        try {
+          await api.content.push(nextContent);
+        } catch (err) {
+          console.error("[store] Instant push to backend failed:", err);
+        }
+      }
     },
-    [queuePush],
+    [],
   );
 
   const addMessage = useCallback(
