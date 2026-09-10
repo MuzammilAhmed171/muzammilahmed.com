@@ -82,11 +82,17 @@ function withIds<T extends { id?: string }>(arr: T[], prefix: string): T[] {
  * string and the local value is non-empty, keep the local value.
  * This prevents backend-stored "" (stripped data-URLs) from wiping good
  * images that are cached in localStorage.
+ *
+ * For arrays of objects that have an `id` field, matching is done by id
+ * (not by index) so that adding/reordering items doesn't corrupt images.
  */
 function mergePreferLocal(local: unknown, remote: unknown): unknown {
+  // "" remote → keep local non-empty string (e.g. base64 data URL)
   if (typeof remote === "string" && remote === "" && typeof local === "string" && local !== "") {
     return local;
   }
+
+  // objects → recurse key-by-key
   if (
     remote !== null &&
     typeof remote === "object" &&
@@ -104,9 +110,24 @@ function mergePreferLocal(local: unknown, remote: unknown): unknown {
     }
     return out;
   }
+
+  // arrays of objects with id → id-based lookup so indices don't matter
   if (Array.isArray(remote) && Array.isArray(local)) {
-    return remote.map((item, i) => mergePreferLocal(local[i], item));
+    const localById = new Map<string, unknown>();
+    for (const item of local) {
+      if (item && typeof item === "object" && (item as Record<string, unknown>).id) {
+        localById.set(String((item as Record<string, unknown>).id), item);
+      }
+    }
+
+    return remote.map((item, i) => {
+      const remoteId = item && typeof item === "object" ? (item as Record<string, unknown>).id : undefined;
+      // For objects with id: look up by id first, then fall back to position
+      const localItem = remoteId ? (localById.get(String(remoteId)) ?? local[i]) : local[i];
+      return mergePreferLocal(localItem, item);
+    });
   }
+
   return remote;
 }
 
