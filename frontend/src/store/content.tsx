@@ -73,62 +73,59 @@ const DEFAULT_CONTENT: SiteContent = {
 
 const STORAGE_KEY = "ma_portfolio_content_v2";
 
-function withIds<T extends { id?: string }>(arr: T[], prefix: string): T[] {
-  return arr.map((x, i) => (x.id ? x : { ...x, id: `${prefix}_${i}` }));
-}
-
 /**
- * Deep-merge `remote` onto `local`, but when the remote value is an empty
- * string and the local value is non-empty, keep the local value.
- * This prevents backend-stored "" (stripped data-URLs) from wiping good
- * images that are cached in localStorage.
- *
- * For arrays of objects that have an `id` field, matching is done by id
- * (not by index) so that adding/reordering items doesn't corrupt images.
+ * Deep-merge `remote` onto `local`, but when the remote value is an empty string
+ * and the local value is non-empty (e.g. data-URL image), keep the local value.
+ * For arrays of objects with an `id` field, matching is done by `id` (not by index).
  */
 function mergePreferLocal(local: unknown, remote: unknown): unknown {
-  // "" remote → keep local non-empty string (e.g. base64 data URL)
+  if (remote === null || remote === undefined) return local ?? remote;
+  if (local === null || local === undefined) return remote;
+
   if (typeof remote === "string" && remote === "" && typeof local === "string" && local !== "") {
     return local;
   }
 
-  // objects → recurse key-by-key
-  if (
-    remote !== null &&
-    typeof remote === "object" &&
-    !Array.isArray(remote) &&
-    local !== null &&
-    typeof local === "object" &&
-    !Array.isArray(local)
-  ) {
-    const out: Record<string, unknown> = { ...(remote as Record<string, unknown>) };
+  if (Array.isArray(remote)) {
+    if (!Array.isArray(local)) return remote;
+    const isObjectArray =
+      remote.length > 0 && typeof remote[0] === "object" && remote[0] !== null && "id" in remote[0];
+    if (isObjectArray) {
+      const localById = new Map<string, unknown>();
+      (local as Array<Record<string, unknown>>).forEach((item) => {
+        if (item && typeof item === "object" && typeof item.id === "string") {
+          localById.set(item.id, item);
+        }
+      });
+      return remote.map((remoteItem) => {
+        if (remoteItem && typeof remoteItem === "object" && remoteItem !== null && "id" in remoteItem) {
+          const localItem = localById.get((remoteItem as { id: string }).id);
+          return localItem ? mergePreferLocal(localItem, remoteItem) : remoteItem;
+        }
+        return remoteItem;
+      });
+    }
+    return remote.map((remoteItem, i) => mergePreferLocal((local as unknown[])[i], remoteItem));
+  }
+
+  if (typeof remote === "object" && typeof local === "object") {
+    const out: Record<string, unknown> = { ...(local as Record<string, unknown>), ...(remote as Record<string, unknown>) };
     for (const key of Object.keys(out)) {
-      out[key] = mergePreferLocal(
-        (local as Record<string, unknown>)[key],
-        (remote as Record<string, unknown>)[key],
-      );
+      if (key in (local as Record<string, unknown>) && key in (remote as Record<string, unknown>)) {
+        out[key] = mergePreferLocal(
+          (local as Record<string, unknown>)[key],
+          (remote as Record<string, unknown>)[key],
+        );
+      }
     }
     return out;
   }
 
-  // arrays of objects with id → id-based lookup so indices don't matter
-  if (Array.isArray(remote) && Array.isArray(local)) {
-    const localById = new Map<string, unknown>();
-    for (const item of local) {
-      if (item && typeof item === "object" && (item as Record<string, unknown>).id) {
-        localById.set(String((item as Record<string, unknown>).id), item);
-      }
-    }
-
-    return remote.map((item, i) => {
-      const remoteId = item && typeof item === "object" ? (item as Record<string, unknown>).id : undefined;
-      // For objects with id: look up by id first, then fall back to position
-      const localItem = remoteId ? (localById.get(String(remoteId)) ?? local[i]) : local[i];
-      return mergePreferLocal(localItem, item);
-    });
-  }
-
   return remote;
+}
+
+function withIds<T extends { id?: string }>(arr: T[], prefix: string): T[] {
+  return arr.map((x, i) => (x.id ? x : { ...x, id: `${prefix}_${i}` }));
 }
 
 function mergeContent(saved: Partial<SiteContent> | null): SiteContent {
@@ -198,13 +195,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       .fetchPublic()
       .then(({ content: remote, empty }) => {
         if (cancelled || empty || !remote) return;
-        // mergePreferLocal keeps local images (base64) when backend has ""
-        setContent((prev) => ({
-          ...(mergePreferLocal(prev, remote) as SiteContent),
-          messages: prev.messages,
-        }));
+        setContent((prev) => mergePreferLocal(prev, remote) as SiteContent);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -215,13 +208,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     api.content
       .fetchFull()
       .then(({ content: full, empty }) => {
-        if (!empty && full)
-          // preserve local images (base64) that the backend stripped to ""
-          setContent((prev) => ({
-            ...(mergePreferLocal(prev, mergeContent(full)) as SiteContent),
-          }));
+        if (!empty && full) setContent((prev) => mergePreferLocal(prev, full) as SiteContent);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   /* Immediately sync section update to backend & local storage */
@@ -255,7 +244,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         ...c,
         messages: [{ ...m, id: uid(), date: new Date().toISOString(), read: false }, ...c.messages],
       }));
-      if (apiEnabled) api.messages.send(m).catch(() => {});
+      if (apiEnabled) api.messages.send(m).catch(() => { });
     },
     [],
   );

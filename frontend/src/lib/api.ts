@@ -1,14 +1,16 @@
 import type { SiteContent } from "../data";
 
 /**
- * Recursively strip base64 data-URLs from any object/array.
- * Vercel serverless limit is 4.5 MB; embedded images blow past it instantly.
- * We keep only URL strings (http/https/relative) and plain text.
- * localStorage always holds the full content so the UI is unaffected.
+ * Strip excessively large base64 data-URLs (> 500 KB) from content payloads
+ * to prevent Vercel 4.5 MB body limit errors. Small compressed images (~50-80 KB)
+ * pass through and save to the database.
  */
 function stripDataUrls<T>(value: T): T {
   if (typeof value === "string") {
-    return (value.startsWith("data:") ? "" : value) as unknown as T;
+    if (value.startsWith("data:") && value.length > 500 * 1024) {
+      return "" as unknown as T;
+    }
+    return value as unknown as T;
   }
   if (Array.isArray(value)) {
     return value.map(stripDataUrls) as unknown as T;

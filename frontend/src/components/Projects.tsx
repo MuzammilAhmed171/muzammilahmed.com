@@ -260,7 +260,7 @@ export default function Projects() {
               >
                 {selected.gallery.map((img, i) => (
                   <SmartImage
-                    key={img}
+                    key={`${i}_${img?.slice(0, 20)}`}
                     src={img}
                     alt={`${selected.title} screenshot ${i + 1}`}
                     label={`${selected.title}, screen ${i + 1}`}
@@ -294,7 +294,7 @@ export default function Projects() {
             <div className="mt-5 flex items-center justify-center gap-3 sm:gap-4">
               {selected.gallery.map((img, i) => (
                 <button
-                  key={img}
+                  key={`${i}_thumb_${img?.slice(0, 20)}`}
                   type="button"
                   onClick={() => setSlide(i)}
                   aria-label={`Go to screenshot ${i + 1}`}

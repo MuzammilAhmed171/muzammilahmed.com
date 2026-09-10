@@ -7,24 +7,53 @@ function isPopulated(data) {
 
 /**
  * Deep-merge: when incoming value is an empty string and the existing value
- * is a non-empty string (e.g. a previously stored data-URL or https URL),
- * keep the existing value.  This handles the case where the frontend strips
- * base64 data-URLs before sending to avoid the 4.5 MB Vercel body limit.
+ * is an image URL (data-URL or http URL), keep the existing value.
+ * Plain text fields (like description, title) are left as incoming even if empty.
+ * For arrays of objects with an `id`, matching is done by `id` (not by index).
  */
 function preserveExisting(existing, incoming) {
-  if (typeof incoming === "string" && incoming === "" && typeof existing === "string" && existing !== "") {
-    return existing;
+  if (existing === undefined || existing === null) return incoming;
+  if (incoming === undefined || incoming === null) return incoming;
+
+  if (typeof incoming === "string" && incoming === "") {
+    if (typeof existing === "string" && (existing.startsWith("data:") || existing.startsWith("http"))) {
+      return existing;
+    }
+    return incoming;
   }
-  if (incoming !== null && typeof incoming === "object" && !Array.isArray(incoming)) {
+
+  if (Array.isArray(incoming)) {
+    if (!Array.isArray(existing)) return incoming;
+    const isObjectArray =
+      incoming.length > 0 && typeof incoming[0] === "object" && incoming[0] !== null && "id" in incoming[0];
+    if (isObjectArray) {
+      const existingById = new Map();
+      existing.forEach((item) => {
+        if (item && typeof item === "object" && item.id) {
+          existingById.set(item.id, item);
+        }
+      });
+      return incoming.map((incItem) => {
+        if (incItem && typeof incItem === "object" && incItem !== null && incItem.id) {
+          const extItem = existingById.get(incItem.id);
+          return extItem ? preserveExisting(extItem, incItem) : incItem;
+        }
+        return incItem;
+      });
+    }
+    return incoming.map((item, i) => preserveExisting(existing[i], item));
+  }
+
+  if (typeof incoming === "object" && typeof existing === "object") {
     const out = { ...incoming };
     for (const key of Object.keys(out)) {
-      out[key] = preserveExisting(existing && existing[key], out[key]);
+      if (key in existing) {
+        out[key] = preserveExisting(existing[key], out[key]);
+      }
     }
     return out;
   }
-  if (Array.isArray(incoming)) {
-    return incoming.map((item, i) => preserveExisting(existing && existing[i], item));
-  }
+
   return incoming;
 }
 
