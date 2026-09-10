@@ -12,13 +12,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 const ALLOWED = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".mp4", ".webm"];
 
-const storage = multer.diskStorage({
-  destination: uploadsDir,
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 8);
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -32,4 +26,4 @@ const upload = multer({
   },
 });
 
-module.exports = { upload, uploadsDir };
+module.exports = { upload, uploadsDir: path.join(__dirname, "..", "..", "uploads") };

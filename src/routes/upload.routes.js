@@ -13,7 +13,9 @@ router.post(
   upload.single("file"),
   asyncHandler(async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const mime = req.file.mimetype || "image/jpeg";
+    const base64 = req.file.buffer.toString("base64");
+    const url = `data:${mime};base64,${base64}`;
     res.json({ url });
   }),
 );
