@@ -77,6 +77,39 @@ function withIds<T extends { id?: string }>(arr: T[], prefix: string): T[] {
   return arr.map((x, i) => (x.id ? x : { ...x, id: `${prefix}_${i}` }));
 }
 
+/**
+ * Deep-merge `remote` onto `local`, but when the remote value is an empty
+ * string and the local value is non-empty, keep the local value.
+ * This prevents backend-stored "" (stripped data-URLs) from wiping good
+ * images that are cached in localStorage.
+ */
+function mergePreferLocal(local: unknown, remote: unknown): unknown {
+  if (typeof remote === "string" && remote === "" && typeof local === "string" && local !== "") {
+    return local;
+  }
+  if (
+    remote !== null &&
+    typeof remote === "object" &&
+    !Array.isArray(remote) &&
+    local !== null &&
+    typeof local === "object" &&
+    !Array.isArray(local)
+  ) {
+    const out: Record<string, unknown> = { ...(remote as Record<string, unknown>) };
+    for (const key of Object.keys(out)) {
+      out[key] = mergePreferLocal(
+        (local as Record<string, unknown>)[key],
+        (remote as Record<string, unknown>)[key],
+      );
+    }
+    return out;
+  }
+  if (Array.isArray(remote) && Array.isArray(local)) {
+    return remote.map((item, i) => mergePreferLocal(local[i], item));
+  }
+  return remote;
+}
+
 function mergeContent(saved: Partial<SiteContent> | null): SiteContent {
   if (!saved || typeof saved !== "object") return DEFAULT_CONTENT;
   return {
@@ -144,7 +177,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       .fetchPublic()
       .then(({ content: remote, empty }) => {
         if (cancelled || empty || !remote) return;
-        setContent((prev) => ({ ...prev, ...remote, messages: prev.messages }));
+        // mergePreferLocal keeps local images (base64) when backend has ""
+        setContent((prev) => ({
+          ...(mergePreferLocal(prev, remote) as SiteContent),
+          messages: prev.messages,
+        }));
       })
       .catch(() => {});
     return () => {
@@ -157,7 +194,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     api.content
       .fetchFull()
       .then(({ content: full, empty }) => {
-        if (!empty && full) setContent(mergeContent(full));
+        if (!empty && full)
+          // preserve local images (base64) that the backend stripped to ""
+          setContent((prev) => ({
+            ...(mergePreferLocal(prev, mergeContent(full)) as SiteContent),
+          }));
       })
       .catch(() => {});
   }, []);
