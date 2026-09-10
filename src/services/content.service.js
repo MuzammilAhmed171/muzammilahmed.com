@@ -5,6 +5,29 @@ function isPopulated(data) {
   return Boolean(data && data.hero && data.hero.name);
 }
 
+/**
+ * Deep-merge: when incoming value is an empty string and the existing value
+ * is a non-empty string (e.g. a previously stored data-URL or https URL),
+ * keep the existing value.  This handles the case where the frontend strips
+ * base64 data-URLs before sending to avoid the 4.5 MB Vercel body limit.
+ */
+function preserveExisting(existing, incoming) {
+  if (typeof incoming === "string" && incoming === "" && typeof existing === "string" && existing !== "") {
+    return existing;
+  }
+  if (incoming !== null && typeof incoming === "object" && !Array.isArray(incoming)) {
+    const out = { ...incoming };
+    for (const key of Object.keys(out)) {
+      out[key] = preserveExisting(existing && existing[key], out[key]);
+    }
+    return out;
+  }
+  if (Array.isArray(incoming)) {
+    return incoming.map((item, i) => preserveExisting(existing && existing[i], item));
+  }
+  return incoming;
+}
+
 /* Public view of the content: strips the admin password so it never leaves
    the server. Everything else is safe for the public site. */
 function toPublicView(data) {
@@ -39,11 +62,14 @@ async function getContent() {
 }
 
 /* Replaces the whole content document (admin panel save). Messages are merged
-   rather than blindly overwritten. */
+   rather than blindly overwritten. Images that arrive as empty strings (stripped
+   by the frontend to avoid the Vercel 4.5 MB body limit) are preserved from
+   the existing stored document. */
 async function saveContent(content) {
   const doc = await Content.getSingleton();
   const mergedMessages = mergeMessages(doc.data.messages, content.messages);
-  doc.data = { ...content, messages: mergedMessages };
+  const mergedContent = preserveExisting(doc.data, { ...content, messages: mergedMessages });
+  doc.data = mergedContent;
   doc.markModified("data");
   await doc.save();
   return doc.data;

@@ -194,7 +194,7 @@ export function PasswordInput({
 /*  Media helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-export function fileToImage(file: File, maxW = 1000): Promise<string> {
+export function fileToImage(file: File, maxW = 800): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -210,7 +210,7 @@ export function fileToImage(file: File, maxW = 1000): Promise<string> {
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.75));
+        resolve(canvas.toDataURL("image/jpeg", 0.65));
       };
       img.onerror = () => reject(new Error("Invalid image file"));
       img.src = String(reader.result);
@@ -229,18 +229,9 @@ export function videoEmbed(url: string): { type: "iframe" | "video"; src: string
   return { type: "video", src: url };
 }
 
-/* Upload a file: uses the backend when available, else local compressed data-URL. */
+/* Upload a file: returns compressed local data-URL. */
 async function uploadOrLocal(file: File, local: () => Promise<string>): Promise<string> {
-  const dataUrl = await local();
-  if (apiEnabled) {
-    try {
-      const { url } = await api.upload(file);
-      return url;
-    } catch {
-      return dataUrl;
-    }
-  }
-  return dataUrl;
+  return local();
 }
 
 /* ------------------------------------------------------------------ */

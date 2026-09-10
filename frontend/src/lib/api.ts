@@ -1,5 +1,28 @@
 import type { SiteContent } from "../data";
 
+/**
+ * Recursively strip base64 data-URLs from any object/array.
+ * Vercel serverless limit is 4.5 MB; embedded images blow past it instantly.
+ * We keep only URL strings (http/https/relative) and plain text.
+ * localStorage always holds the full content so the UI is unaffected.
+ */
+function stripDataUrls<T>(value: T): T {
+  if (typeof value === "string") {
+    return (value.startsWith("data:") ? "" : value) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map(stripDataUrls) as unknown as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as object)) {
+      out[key] = stripDataUrls((value as Record<string, unknown>)[key]);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
+
 /* Frontend API client.
    Set VITE_API_URL to your deployed backend (e.g. http://localhost:5000) and the
    site switches from localStorage mode to live backend mode automatically.
@@ -75,7 +98,11 @@ export const api = {
     fetchFull: () =>
       request<{ content: SiteContent; empty: boolean }>("/api/content/full", { auth: true }),
     push: (content: SiteContent) =>
-      request<{ ok: boolean }>("/api/content", { method: "PUT", auth: true, body: { content } }),
+      request<{ ok: boolean }>("/api/content", {
+        method: "PUT",
+        auth: true,
+        body: { content: stripDataUrls(content) },
+      }),
   },
   messages: {
     send: (m: { name: string; email: string; subject: string; message: string }) =>
