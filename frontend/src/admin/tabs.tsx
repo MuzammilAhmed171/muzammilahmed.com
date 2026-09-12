@@ -43,6 +43,54 @@ function BackToList({ onClick }: { onClick: () => void }) {
   );
 }
 
+/* Reusable reorder buttons component - compact icon-only design */
+function ReorderButtons({
+  index,
+  total,
+  onMove,
+}: {
+  index: number;
+  total: number;
+  onMove: (direction: "top" | "up" | "down" | "bottom") => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onMove("top")}
+        disabled={index === 0}
+        title="Move to top"
+        className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-gray-400 transition-all hover:bg-accent hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-gray-400"
+      >
+        <MoveToTopIcon className="h-3.5 w-3.5" />
+      </button>
+      <button
+        onClick={() => onMove("up")}
+        disabled={index === 0}
+        title="Move up"
+        className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-gray-400 transition-all hover:bg-accent hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-gray-400"
+      >
+        <ArrowUpIcon className="h-3.5 w-3.5" />
+      </button>
+      <button
+        onClick={() => onMove("down")}
+        disabled={index === total - 1}
+        title="Move down"
+        className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-gray-400 transition-all hover:bg-accent hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-gray-400"
+      >
+        <ArrowDownIcon className="h-3.5 w-3.5" />
+      </button>
+      <button
+        onClick={() => onMove("bottom")}
+        disabled={index === total - 1}
+        title="Move to bottom"
+        className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-gray-400 transition-all hover:bg-accent hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-gray-400"
+      >
+        <MoveToBottomIcon className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 const ICON_OPTIONS = [
   { value: "signpost", label: "Signpost (Address)" },
   { value: "phone", label: "Phone" },
@@ -434,50 +482,17 @@ export function ProjectsTab() {
               </div>
             </div>
 
-            {/* Bottom Row: Reorder Buttons Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
+            {/* Bottom Row: Reorder Buttons */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                <span>↕ Order Position:</span>
+                <span>Position:</span>
                 <span className="text-gray-300 font-bold bg-white/10 px-2 py-0.5 rounded text-[10px]">#{idx + 1}</span>
               </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => moveProject(p.id!, "top")}
-                  disabled={idx === 0}
-                  title="Move to top position"
-                  className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-bold text-black transition-all hover:bg-yellow-300 disabled:opacity-30 disabled:hover:bg-accent"
-                >
-                  <MoveToTopIcon className="h-4 w-4" />
-                  <span>Top</span>
-                </button>
-                <button
-                  onClick={() => moveProject(p.id!, "up")}
-                  disabled={idx === 0}
-                  title="Move one position up"
-                  className="flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition-all hover:bg-white hover:text-black disabled:opacity-30 disabled:hover:bg-white/15 disabled:hover:text-white"
-                >
-                  <ArrowUpIcon className="h-4 w-4" />
-                  <span>Up (↑)</span>
-                </button>
-                <button
-                  onClick={() => moveProject(p.id!, "down")}
-                  disabled={idx === projects.length - 1}
-                  title="Move one position down"
-                  className="flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition-all hover:bg-white hover:text-black disabled:opacity-30 disabled:hover:bg-white/15 disabled:hover:text-white"
-                >
-                  <ArrowDownIcon className="h-4 w-4" />
-                  <span>Down (↓)</span>
-                </button>
-                <button
-                  onClick={() => moveProject(p.id!, "bottom")}
-                  disabled={idx === projects.length - 1}
-                  title="Move to bottom position"
-                  className="flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition-all hover:bg-white hover:text-black disabled:opacity-30 disabled:hover:bg-white/15 disabled:hover:text-white"
-                >
-                  <MoveToBottomIcon className="h-4 w-4" />
-                  <span>Bottom</span>
-                </button>
-              </div>
+              <ReorderButtons
+                index={idx}
+                total={projects.length}
+                onMove={(direction) => moveProject(p.id!, direction)}
+              />
             </div>
           </article>
         ))}
@@ -551,6 +566,34 @@ export function ReviewsTab() {
     toast(exists ? "Review updated" : "Review added");
   };
 
+  const moveReview = (id: string, direction: "up" | "down" | "top" | "bottom") => {
+    const index = reviews.findIndex((r) => r.id === id);
+    if (index === -1) return;
+
+    const reordered = [...reviews];
+    const [review] = reordered.splice(index, 1);
+
+    switch (direction) {
+      case "up":
+        if (index > 0) reordered.splice(index - 1, 0, review);
+        else reordered.unshift(review);
+        break;
+      case "down":
+        if (index < reordered.length) reordered.splice(index + 1, 0, review);
+        else reordered.push(review);
+        break;
+      case "top":
+        reordered.unshift(review);
+        break;
+      case "bottom":
+        reordered.push(review);
+        break;
+    }
+
+    updateSection("reviews", reordered);
+    toast(`Review moved ${direction}`);
+  };
+
   if (editing) return <ReviewForm review={editing} onSave={save} onCancel={() => setEditing(null)} />;
 
   return (
@@ -564,30 +607,44 @@ export function ReviewsTab() {
         </button>
       </div>
 
-      <div className="mt-6 space-y-3">
-        {reviews.map((r) => (
-          <article key={r.id} className={`flex flex-wrap items-center gap-4 rounded-lg border bg-white/[0.02] p-4 transition-all sm:flex-nowrap ${r.hidden ? "border-white/10 opacity-50 grayscale" : "border-white/10"}`}>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-accent/40 bg-neutral-900">
-              {r.photo ? <img src={r.photo} alt="" className="h-full w-full object-cover" /> : <span className="font-display text-xs font-bold text-accent">{r.initials || initialsOf(r.name)}</span>}
+      <div className="mt-6 space-y-4">
+        {reviews.map((r, idx) => (
+          <article key={r.id} className={`rounded-lg border bg-white/[0.02] p-4 transition-all space-y-3 ${r.hidden ? "border-white/10 opacity-50 grayscale" : "border-white/10"}`}>
+            <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-accent/40 bg-neutral-900">
+                {r.photo ? <img src={r.photo} alt="" className="h-full w-full object-cover" /> : <span className="font-display text-xs font-bold text-accent">{r.initials || initialsOf(r.name)}</span>}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 font-display text-sm font-bold text-white">
+                  <span className="truncate">{r.name || "(unnamed)"}</span>
+                  {r.hidden ? <span className="shrink-0 rounded-full border border-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-gray-500">Hidden</span> : null}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-gray-500">{r.platform} · {r.when}</p>
+                <span className="mt-1 flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <StarIcon key={n} className={`h-3 w-3 ${n <= r.rating ? "text-accent" : "text-gray-700"}`} />
+                  ))}
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <VisibilityToggle small hidden={!!r.hidden} onToggle={() => toggleVisibility(r.id!)} />
+                <button onClick={() => setEditing({ ...r })} className="rounded-full border border-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:border-accent hover:text-accent">
+                  Edit
+                </button>
+                <DeleteButton small onDelete={() => { updateSection("reviews", reviews.filter((x) => x.id !== r.id)); toast("Review deleted"); }} />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 font-display text-sm font-bold text-white">
-                <span className="truncate">{r.name || "(unnamed)"}</span>
-                {r.hidden ? <span className="shrink-0 rounded-full border border-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-gray-500">Hidden</span> : null}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-gray-500">{r.platform} · {r.when}</p>
-              <span className="mt-1 flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <StarIcon key={n} className={`h-3 w-3 ${n <= r.rating ? "text-accent" : "text-gray-700"}`} />
-                ))}
+            {/* Reorder Buttons */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <span>Position:</span>
+                <span className="text-gray-300 font-bold bg-white/10 px-2 py-0.5 rounded text-[10px]">#{idx + 1}</span>
               </span>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <VisibilityToggle small hidden={!!r.hidden} onToggle={() => toggleVisibility(r.id!)} />
-              <button onClick={() => setEditing({ ...r })} className="rounded-full border border-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:border-accent hover:text-accent">
-                Edit
-              </button>
-              <DeleteButton small onDelete={() => { updateSection("reviews", reviews.filter((x) => x.id !== r.id)); toast("Review deleted"); }} />
+              <ReorderButtons
+                index={idx}
+                total={reviews.length}
+                onMove={(direction) => moveReview(r.id!, direction)}
+              />
             </div>
           </article>
         ))}
@@ -656,6 +713,34 @@ export function TestimonialsTab() {
     toast(exists ? "Testimonial updated" : "Testimonial added");
   };
 
+  const moveTestimonial = (id: string, direction: "up" | "down" | "top" | "bottom") => {
+    const index = testimonials.findIndex((t) => t.id === id);
+    if (index === -1) return;
+
+    const reordered = [...testimonials];
+    const [testimonial] = reordered.splice(index, 1);
+
+    switch (direction) {
+      case "up":
+        if (index > 0) reordered.splice(index - 1, 0, testimonial);
+        else reordered.unshift(testimonial);
+        break;
+      case "down":
+        if (index < reordered.length) reordered.splice(index + 1, 0, testimonial);
+        else reordered.push(testimonial);
+        break;
+      case "top":
+        reordered.unshift(testimonial);
+        break;
+      case "bottom":
+        reordered.push(testimonial);
+        break;
+    }
+
+    updateSection("testimonials", reordered);
+    toast(`Testimonial moved ${direction}`);
+  };
+
   if (editing) return <TestimonialForm testimonial={editing} onSave={save} onCancel={() => setEditing(null)} />;
 
   return (
@@ -669,27 +754,41 @@ export function TestimonialsTab() {
         </button>
       </div>
 
-      <div className="mt-6 space-y-3">
-        {testimonials.map((t) => (
-          <article key={t.id} className={`flex flex-wrap items-center gap-4 rounded-lg border bg-white/[0.02] p-4 transition-all sm:flex-nowrap ${t.hidden ? "border-white/10 opacity-50 grayscale" : "border-white/10"}`}>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-neutral-900 font-display text-xs font-bold text-accent">
-              {t.initials || initialsOf(t.name)}
+      <div className="mt-6 space-y-4">
+        {testimonials.map((t, idx) => (
+          <article key={t.id} className={`rounded-lg border bg-white/[0.02] p-4 transition-all space-y-3 ${t.hidden ? "border-white/10 opacity-50 grayscale" : "border-white/10"}`}>
+            <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-neutral-900 font-display text-xs font-bold text-accent">
+                {t.initials || initialsOf(t.name)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 font-display text-sm font-bold text-white">
+                  <span className="truncate">{t.name || "(unnamed)"}</span>
+                  {t.hidden ? <span className="shrink-0 rounded-full border border-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-gray-500">Hidden</span> : null}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-gray-500">
+                  {t.project || "(no project)"} · {t.duration} · {t.video ? "video attached ✓" : "no video yet"}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <VisibilityToggle small hidden={!!t.hidden} onToggle={() => toggleVisibility(t.id!)} />
+                <button onClick={() => setEditing({ ...t })} className="rounded-full border border-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:border-accent hover:text-accent">
+                  Edit
+                </button>
+                <DeleteButton small onDelete={() => { updateSection("testimonials", testimonials.filter((x) => x.id !== t.id)); toast("Testimonial deleted"); }} />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 font-display text-sm font-bold text-white">
-                <span className="truncate">{t.name || "(unnamed)"}</span>
-                {t.hidden ? <span className="shrink-0 rounded-full border border-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-gray-500">Hidden</span> : null}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-gray-500">
-                {t.project || "(no project)"} · {t.duration} · {t.video ? "video attached ✓" : "no video yet"}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <VisibilityToggle small hidden={!!t.hidden} onToggle={() => toggleVisibility(t.id!)} />
-              <button onClick={() => setEditing({ ...t })} className="rounded-full border border-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:border-accent hover:text-accent">
-                Edit
-              </button>
-              <DeleteButton small onDelete={() => { updateSection("testimonials", testimonials.filter((x) => x.id !== t.id)); toast("Testimonial deleted"); }} />
+            {/* Reorder Buttons */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <span>Position:</span>
+                <span className="text-gray-300 font-bold bg-white/10 px-2 py-0.5 rounded text-[10px]">#{idx + 1}</span>
+              </span>
+              <ReorderButtons
+                index={idx}
+                total={testimonials.length}
+                onMove={(direction) => moveTestimonial(t.id!, direction)}
+              />
             </div>
           </article>
         ))}
