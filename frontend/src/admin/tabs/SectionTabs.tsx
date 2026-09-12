@@ -290,13 +290,17 @@ function SecurityCard() {
         Change Password
       </button>
 
-      <OtpModal
-        open={otpOpen}
-        title="Verify it's you"
-        description={`We sent a 6-digit code to ${content.settings.email}. Enter it to confirm the password change.`}
-        onClose={() => setOtpOpen(false)}
-        onVerified={apply}
-      />
+      {otpOpen && (
+        <OtpModal
+          email={content.settings.email}
+          demoCode=""
+          onClose={() => setOtpOpen(false)}
+          onVerified={() => {
+            apply();
+            setOtpOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

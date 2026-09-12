@@ -21,7 +21,17 @@ import {
 } from "../data";
 import { api, apiEnabled, getToken } from "../lib/api";
 
-export type { SiteContent };
+export type {
+  SiteContent,
+  Project,
+  Review,
+  Testimonial,
+  ContactItem,
+  HeroContent,
+  AboutContent,
+  SiteSettings,
+} from "../data";
+export { uid } from "../data";
 
 /* Defaults (the original site content) */
 const DEFAULT_CONTENT: SiteContent = {

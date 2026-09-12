@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StarIcon } from "../../components/Icons";
+import { ArrowDownIcon, ArrowUpIcon, MoveToBottomIcon, MoveToTopIcon, StarIcon } from "../../components/Icons";
 import { uid, useContent, type Project } from "../../store/content";
 import { DeleteButton, ImagePicker, SaveBar, TextArea, TextInput, Toggle, VisibilityToggle, useToast } from "../controls";
 
@@ -192,6 +192,34 @@ export default function ProjectsTab() {
     toast(target?.hidden ? "Project is now visible on the website" : "Project hidden from the website");
   };
 
+  const moveProject = (id: string, direction: "up" | "down" | "top" | "bottom") => {
+    const index = projects.findIndex((p) => p.id === id);
+    if (index === -1) return;
+
+    const reordered = [...projects];
+    const [project] = reordered.splice(index, 1);
+
+    switch (direction) {
+      case "up":
+        if (index > 0) reordered.splice(index - 1, 0, project);
+        else reordered.unshift(project);
+        break;
+      case "down":
+        if (index < reordered.length) reordered.splice(index + 1, 0, project);
+        else reordered.push(project);
+        break;
+      case "top":
+        reordered.unshift(project);
+        break;
+      case "bottom":
+        reordered.push(project);
+        break;
+    }
+
+    updateSection("projects", reordered);
+    toast(`Project moved ${direction}`);
+  };
+
   if (editing) {
     return <ProjectForm project={editing} onSave={save} onCancel={() => setEditing(null)} />;
   }
@@ -242,8 +270,44 @@ export default function ProjectsTab() {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {/* Reorder buttons */}
+              <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-1">
+                <button
+                  onClick={() => moveProject(p.id!, "top")}
+                  disabled={projects.findIndex((x) => x.id === p.id) === 0}
+                  title="Move to top"
+                  className="rounded p-1.5 text-gray-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  <MoveToTopIcon className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => moveProject(p.id!, "up")}
+                  disabled={projects.findIndex((x) => x.id === p.id) === 0}
+                  title="Move up"
+                  className="rounded p-1.5 text-gray-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  <ArrowUpIcon className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => moveProject(p.id!, "down")}
+                  disabled={projects.findIndex((x) => x.id === p.id) === projects.length - 1}
+                  title="Move down"
+                  className="rounded p-1.5 text-gray-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  <ArrowDownIcon className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => moveProject(p.id!, "bottom")}
+                  disabled={projects.findIndex((x) => x.id === p.id) === projects.length - 1}
+                  title="Move to bottom"
+                  className="rounded p-1.5 text-gray-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  <MoveToBottomIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
               <button
-                onClick={() => togglePin(p.id)}
+                onClick={() => togglePin(p.id!)}
                 className={`rounded-full border px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                   p.featured
                     ? "border-accent bg-accent text-black hover:bg-yellow-300"
@@ -252,14 +316,14 @@ export default function ProjectsTab() {
               >
                 {p.featured ? "★ Pinned" : "Pin to Top"}
               </button>
-              <VisibilityToggle small hidden={!!p.hidden} onToggle={() => toggleVisibility(p.id)} />
+              <VisibilityToggle small hidden={!!p.hidden} onToggle={() => toggleVisibility(p.id!)} />
               <button
                 onClick={() => setEditing({ ...p })}
                 className="rounded-full border border-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:border-accent hover:text-accent"
               >
                 Edit
               </button>
-              <DeleteButton small onDelete={() => remove(p.id)} />
+              <DeleteButton small onDelete={() => remove(p.id!)} />
             </div>
           </article>
         ))}

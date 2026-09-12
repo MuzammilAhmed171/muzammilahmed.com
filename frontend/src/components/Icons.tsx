@@ -121,6 +121,26 @@ export function ArrowDownIcon(props: IconProps) {
   );
 }
 
+export function MoveToTopIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props} aria-hidden="true">
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+      <path d="M5 5h14" />
+    </svg>
+  );
+}
+
+export function MoveToBottomIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props} aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+      <path d="M5 19h14" />
+    </svg>
+  );
+}
+
 export function ExternalLinkIcon(props: IconProps) {
   return (
     <svg {...base} {...props} aria-hidden="true">
