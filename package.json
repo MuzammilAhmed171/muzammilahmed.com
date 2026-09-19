@@ -1,10 +1,11 @@
 {
-  "name": "portfolio-backend",
+  "name": "portfolio",
   "version": "1.0.0",
-  "description": "Express + MongoDB backend for the Muzammil Ahmed portfolio admin panel",
+  "description": "Fullstack MERN Portfolio with Admin Panel (Muzammil Ahmed)",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node seed.js"

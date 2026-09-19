@@ -26,15 +26,14 @@ function stripDataUrls<T>(value: T): T {
 }
 
 /* Frontend API client.
-   Set VITE_API_URL to your deployed backend (e.g. http://localhost:5000) and the
-   site switches from localStorage mode to live backend mode automatically.
-   When the variable is empty, everything runs on localStorage exactly as before. */
+   Set VITE_API_URL to an external backend URL if running separately (e.g. http://localhost:5000).
+   When empty, it automatically connects to relative "/api" on the same Vercel domain. */
 
 const API_URL: string = (
   (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL ?? ""
 ).replace(/\/+$/, "");
 
-export const apiEnabled = API_URL.length > 0;
+export const apiEnabled = true;
 
 const TOKEN_KEY = "ma_api_token";
 
