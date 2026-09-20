@@ -170,6 +170,7 @@ export function loadContent(): SiteContent {
 
 type ContentStore = {
   content: SiteContent;
+  isLoading: boolean;
   updateSection: <K extends keyof SiteContent>(key: K, value: SiteContent[K]) => void;
   addMessage: (m: { name: string; email: string; subject: string; message: string }) => void;
   resetAll: () => void;
@@ -181,6 +182,7 @@ const ContentContext = createContext<ContentStore | null>(null);
 
 export function ContentProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<SiteContent>(loadContent);
+  const [isLoading, setIsLoading] = useState(true);
   const contentRef = useRef(content);
   const pushTimer = useRef<number | null>(null);
 
@@ -199,15 +201,23 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   /* Hydrate from the backend once (public view) */
   useEffect(() => {
-    if (!apiEnabled) return;
+    if (!apiEnabled) {
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     api.content
       .fetchPublic()
       .then(({ content: remote, empty }) => {
-        if (cancelled || empty || !remote) return;
-        setContent((prev) => mergePreferLocal(prev, remote) as SiteContent);
+        if (cancelled) return;
+        if (!empty && remote) {
+          setContent((prev) => mergePreferLocal(prev, remote) as SiteContent);
+        }
+        setIsLoading(false);
       })
-      .catch(() => { });
+      .catch(() => {
+        if (!cancelled) setIsLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -276,7 +286,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   return (
     <ContentContext.Provider
-      value={{ content, updateSection, addMessage, resetAll, importContent, refreshFromServer }}
+      value={{ content, isLoading, updateSection, addMessage, resetAll, importContent, refreshFromServer }}
     >
       {children}
     </ContentContext.Provider>

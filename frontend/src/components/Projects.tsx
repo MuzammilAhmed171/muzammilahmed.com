@@ -119,8 +119,74 @@ function SectionLabel({ title, note, star = false }: { title: string; note: stri
   );
 }
 
+/* ─── Skeleton components ─── */
+
+function ProjectSkeleton({ spotlight = false }: { spotlight?: boolean }) {
+  return (
+    <div
+      className={`flex h-full flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.02] ${
+        spotlight ? "md:flex-row" : ""
+      }`}
+    >
+      <div
+        className={`animate-pulse bg-neutral-800 ${
+          spotlight ? "aspect-[16/10] shrink-0 md:aspect-auto md:h-64 md:w-[54%]" : "aspect-[3/2] w-full"
+        }`}
+      />
+      <div className="flex grow flex-col gap-3 p-6">
+        <div className="h-5 w-3/5 animate-pulse rounded-md bg-neutral-800" />
+        <div className="h-3 w-full animate-pulse rounded-md bg-neutral-800/70" />
+        <div className="h-3 w-4/5 animate-pulse rounded-md bg-neutral-800/70" />
+        <div className="mt-2 flex gap-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-6 w-16 animate-pulse rounded-full bg-neutral-800/60" />
+          ))}
+        </div>
+        <div className="mt-auto flex gap-3 pt-4">
+          <div className="h-8 w-24 animate-pulse rounded-full bg-neutral-800" />
+          <div className="h-8 w-28 animate-pulse rounded-full bg-neutral-800/60" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectsSkeletonGrid() {
+  return (
+    <div className="mt-14 space-y-20">
+      {/* Featured skeleton */}
+      <div>
+        <div className="flex items-center gap-4">
+          <div className="h-4 w-4 animate-pulse rounded-full bg-accent/40" />
+          <div className="h-5 w-32 animate-pulse rounded-md bg-neutral-800" />
+          <span className="h-px flex-1 bg-white/10" />
+          <div className="h-3 w-20 animate-pulse rounded-md bg-neutral-800" />
+        </div>
+        <div className="mt-8">
+          <ProjectSkeleton spotlight />
+        </div>
+      </div>
+      {/* Regular grid skeleton */}
+      <div>
+        <div className="flex items-center gap-4">
+          <div className="h-5 w-32 animate-pulse rounded-md bg-neutral-800" />
+          <span className="h-px flex-1 bg-white/10" />
+          <div className="h-3 w-20 animate-pulse rounded-md bg-neutral-800" />
+        </div>
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Projects section ─── */
+
 export default function Projects() {
-  const { content } = useContent();
+  const { content, isLoading } = useContent();
   const visible = content.projects.filter((p) => !p.hidden);
   const featured = visible.filter((p) => p.featured);
   const regular = visible.filter((p) => !p.featured);
@@ -177,37 +243,51 @@ export default function Projects() {
           <span aria-hidden="true" className="mt-4 block h-px w-full bg-gradient-to-r from-accent via-accent/50 to-transparent" />
         </Reveal>
 
-        {featured.length > 0 ? (
-          <div className="mt-14">
-            <Reveal>
-              <SectionLabel star title="Top Projects" note={`${featured.length} Featured`} />
-            </Reveal>
-            {featured.length === 1 ? (
-              <div className="mt-8">
-                <ProjectCard project={featured[0]} index={0} onOpen={openProject} spotlight />
+        {/* Show skeleton while fetching */}
+        {isLoading ? (
+          <ProjectsSkeletonGrid />
+        ) : (
+          <>
+            {featured.length > 0 ? (
+              <div className="mt-14">
+                <Reveal>
+                  <SectionLabel star title="Top Projects" note={`${featured.length} Featured`} />
+                </Reveal>
+                {featured.length === 1 ? (
+                  <div className="mt-8">
+                    <ProjectCard project={featured[0]} index={0} onOpen={openProject} spotlight />
+                  </div>
+                ) : (
+                  <div className={`mt-8 grid grid-cols-1 gap-8 ${gridClassFor(featured.length)}`}>
+                    {featured.map((project, i) => (
+                      <ProjectCard key={project.id} project={project} index={i} onOpen={openProject} />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={`mt-8 grid grid-cols-1 gap-8 ${gridClassFor(featured.length)}`}>
-                {featured.map((project, i) => (
-                  <ProjectCard key={project.id} project={project} index={i} onOpen={openProject} />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : null}
+            ) : null}
 
-        {regular.length > 0 ? (
-          <div className={featured.length > 0 ? "mt-20" : "mt-14"}>
-            <Reveal>
-              <SectionLabel title="More Projects" note={`${regular.length} in archive`} />
-            </Reveal>
-            <div className={`mt-8 grid grid-cols-1 gap-8 ${gridClassFor(regular.length)} ${regular.length === 1 ? "md:max-w-2xl" : ""}`}>
-              {regular.map((project, i) => (
-                <ProjectCard key={project.id} project={project} index={i} onOpen={openProject} />
-              ))}
-            </div>
-          </div>
-        ) : null}
+            {regular.length > 0 ? (
+              <div className={featured.length > 0 ? "mt-20" : "mt-14"}>
+                <Reveal>
+                  <SectionLabel title="More Projects" note={`${regular.length} in archive`} />
+                </Reveal>
+                <div className={`mt-8 grid grid-cols-1 gap-8 ${gridClassFor(regular.length)} ${regular.length === 1 ? "md:max-w-2xl" : ""}`}>
+                  {regular.map((project, i) => (
+                    <ProjectCard key={project.id} project={project} index={i} onOpen={openProject} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {visible.length === 0 ? (
+              <div className="mt-20 flex flex-col items-center justify-center gap-4 py-16 text-center opacity-50">
+                <div className="h-16 w-16 rounded-full border-2 border-dashed border-white/20" />
+                <p className="text-sm text-gray-500">No projects yet.</p>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
       {selected ? (

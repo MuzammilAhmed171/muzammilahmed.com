@@ -47,7 +47,7 @@ function SkillBars() {
 }
 
 export default function About() {
-  const { content } = useContent();
+  const { content, isLoading } = useContent();
   const about = content.about;
 
   return (
@@ -62,7 +62,12 @@ export default function About() {
             <div className="relative h-52 w-52 sm:h-56 sm:w-56">
               <div aria-hidden="true" className="absolute -inset-3 animate-spin-slow rounded-full border border-dashed border-white/10" />
               <div aria-hidden="true" className="absolute inset-0 translate-x-4 translate-y-4 rounded-full bg-accent" />
-              {about.profileImage ? (
+              {isLoading ? (
+                /* Skeleton shimmer while fetching */
+                <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-black bg-neutral-900">
+                  <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                </div>
+              ) : about.profileImage ? (
                 <img
                   src={about.profileImage}
                   alt={`Portrait of ${content.hero.name}`}
