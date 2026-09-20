@@ -106,7 +106,7 @@ export type SiteContent = {
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 const IMG = {
-  profile: "https://image.qwenlm.ai/generated-images/a2a5520c-4b4f-4892-81fb-19e08690cd2e/_result.png",
+  profile: "",
   ecommerce: "https://image.qwenlm.ai/generated-images/2bf42015-b754-496d-af6e-210b0ca545e5/_result.png",
   foodhub: "https://image.qwenlm.ai/generated-images/b5fb1e87-a2bb-450a-9c35-00b0861d2488/_result.png",
   analytics: "https://image.qwenlm.ai/generated-images/4d17d53f-5ee1-422b-96b1-382250e2a823/_result.png",

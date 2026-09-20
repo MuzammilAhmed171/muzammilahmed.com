@@ -62,15 +62,19 @@ export default function About() {
             <div className="relative h-52 w-52 sm:h-56 sm:w-56">
               <div aria-hidden="true" className="absolute -inset-3 animate-spin-slow rounded-full border border-dashed border-white/10" />
               <div aria-hidden="true" className="absolute inset-0 translate-x-4 translate-y-4 rounded-full bg-accent" />
-              <img
-                src={about.profileImage}
-                alt={`Portrait of ${content.hero.name}`}
-                loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-                className="relative h-full w-full rounded-full border-4 border-black bg-neutral-900 object-cover"
-              />
+              {about.profileImage ? (
+                <img
+                  src={about.profileImage}
+                  alt={`Portrait of ${content.hero.name}`}
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                  className="relative h-full w-full rounded-full border-4 border-black bg-neutral-900 object-cover transition-opacity duration-500"
+                />
+              ) : (
+                <div className="relative h-full w-full rounded-full border-4 border-black bg-neutral-900" />
+              )}
             </div>
 
             <ul className="mt-12">
